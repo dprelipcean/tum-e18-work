@@ -94,42 +94,117 @@ class BreitWigner:
         return ret_val
 
 
-class kinematicSignature:
+class KinematicSignature:
 
     nKin = None
 
 
 class AngularDependence:
 
-    def __init__(self, kin):
-        pass
-
-    @staticmethod
-    def _check_condition_kinematic(kin):
-        """Check the kinematic signature condition."""
-        if kin.size != kinematicSignature.nKin:
-            raise Exception(f"BELLE_S::eval(...) Number of kinematic variables does not match ({kin.size}) + {kinematicSignature.nKin}")
-        else:
-            return complex(1., 0.)
-
-        
-class BELLE_S:
-
     valid_isobar_indexes = [12, 13, 23]
 
-    def __init__(self, isobar_index, fs_masses):
-
-        self._check_condition_isobarindex(isobar_index)
-        self._check_condition_fsmasses(fs_masses)
+    def __init__(self):
+        pass
 
     def _check_condition_isobarindex(self, isobar_index):
         if isobar_index not in self.valid_isobar_indexes:
-            raise Exception(f"BELLE_S(...) None of the three possible isobar masses match (12, 13 and 23) the given value: {isobar_index}")
+            raise Exception(f"None of the three possible isobar masses match (12, 13 and 23) the given value: "
+                            f"{isobar_index}")
 
     @staticmethod
     def _check_condition_fsmasses(fs_masses):
         if fs_masses.size != 3:
-            raise Exception(f"BELLE_S(...)", "Number of final state masses given is not three.")
+            raise Exception(f"Number of final state masses given is not three.")
 
-    def eval(self):
-        pass
+    @staticmethod
+    def _check_condition_kinematic(kin):
+        """Check the kinematic signature condition."""
+        if kin.size != KinematicSignature.nKin:
+            raise Exception(f"BelleS::eval(...) Number of kinematic variables does not match ({kin.size}) + "
+                            f"{KinematicSignature.nKin}")
+            # return complex(0., 0.);
+        else:
+            return complex(1., 0.)
+
+
+class BelleAngDep(AngularDependence):
+
+    def __init__(self, isobar_index, fs_masses):
+        super(BelleAngDep, self).__init__()
+        self._check_condition_isobarindex(isobar_index)
+        self._check_condition_fsmasses(fs_masses)
+
+        self.isobar_index = isobar_index
+        self.fs_masses = fs_masses
+
+    def set_fs_masses(self, new_masses):
+        if new_masses.size != 3:
+            raise Exception(f"BelleP::setFSmasses(...)", "Number of masses given is not three: {newMasses.size}")
+        self.fs_masses = new_masses
+
+    def compute_s_kpi_wrong(self, m_d2, kin):
+        return m_d2 + np.power(self.fs_masses[0], 2) + np.power(self.fs_masses[1], 2) \
+                    + np.power(self.fs_masses[2], 2) - kin[1] - kin[2]
+
+    def compute_masses(self, kin, s_k_pi_wrong):
+        if self.isobar_index == 12:  # ((piRight, Ks), piWrong)
+            m_a2 = np.power(self.fs_masses[0], 2)
+            m_b2 = np.power(self.fs_masses[1], 2)
+            m_c2 = np.power(self.fs_masses[2], 2)
+
+            m_ab2 = kin[1]
+            m_ac2 = kin[2]
+            m_bc2 = s_k_pi_wrong
+        elif self.isobar_index == 13:  # ((piRight, piWrong), Ks)
+            m_a2 = np.power(self.fs_masses[2], 2)
+            m_b2 = np.power(self.fs_masses[0], 2)
+            m_c2 = np.power(self.fs_masses[1], 2)
+
+            m_ab2 = kin[2]
+            m_ac2 = s_k_pi_wrong
+            m_bc2 = kin[1]
+        else:  # self.isobar_index == 23:  # ((Ks, piWrong), piRight)
+            m_a2 = np.power(self.fs_masses[1], 2)
+            m_b2 = np.power(self.fs_masses[2], 2)
+            m_c2 = np.power(self.fs_masses[0], 2)
+
+            m_ab2 = s_k_pi_wrong
+            m_ac2 = kin[1]
+            m_bc2 = kin[2]
+        return m_a2, m_b2, m_c2, m_ab2, m_ac2, m_bc2
+
+
+class BelleS(BelleAngDep):
+
+    def eval(self, kin):
+        return self._check_condition_kinematic(kin)
+
+
+class BelleP(BelleAngDep):
+
+    def eval(self, kin):
+        self._check_condition_kinematic(kin)
+
+        m_d2 = kin[0]
+        s_k_pi_wrong = self.compute_s_kpi_wrong(m_d2, kin)
+        m_a2, m_b2, m_c2, m_ab2, m_ac2, m_bc2 = self.compute_masses(kin, s_k_pi_wrong)
+
+        return_value = m_ac2 - m_bc2 + (m_d2-m_c2)*(m_b2-m_a2)/m_ab2
+
+        return complex(return_value, 0.)
+
+
+class BelleD(BelleAngDep):
+
+    def eval(self, kin):
+        self._check_condition_kinematic(kin)
+
+        m_d2 = kin[0]
+        s_k_pi_wrong = self.compute_s_kpi_wrong(m_d2, kin)
+        m_a2, m_b2, m_c2, m_ab2, m_ac2, m_bc2 = self.compute_masses(kin, s_k_pi_wrong)
+
+        return_value = m_ab2 - 2*m_d2 - 2*m_c2 + np.power(m_d2 - m_c2, 2)/m_ab2
+        return_value *= m_ab2 - 2*m_a2 - 2*m_b2 + np.power(m_a2 - m_b2, 2)/m_ab2
+        return_value /= -3
+        return_value += np.power(m_bc2 - m_ac2 + (m_d2 - m_c2)*(m_a2 - m_b2)/m_ab2, 2)
+        return complex(return_value, 0.)
