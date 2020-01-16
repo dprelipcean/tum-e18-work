@@ -2,39 +2,70 @@
 # bins.py
 # Created: 2020-01-03 09:10:40.360767
 # Author: Fabian Krinner
-import os, sys
+import os
+import sys
 
 import numpy as np
 
-class rectangularBin:
-	def __init__(self, xMin, xMax, yMin, yMax):
-		self.borders = [xMin, xMax, yMin, yMax]
 
-	def getAllBorders(self):
+class RectangularBin:
+
+	def __init__(self, x_min, x_max, y_min, y_max):
+		self.borders = [x_min, x_max, y_min, y_max]
+
+	def get_all_borders(self):
 		return [self.borders]
 
-	def getBorders(self):
+	def get_borders(self):
+		"""Return the borders of the bins."""
 		return self.borders
 
 	def contains(self, x, y):
-		return x > self.borders[0] and x <= self.borders[1] and y > self.borders[2] and y <= self.borders[3]
+		"""Check whether a point is contained within the bins' borders.
 
-	def makeGrid(self, meshWidth):
+		Parameters
+		----------
+		x: int, float
+		y: int, float
+			Points in the plane.
 
-		iMin = int(self.borders[0]/meshWidth) + 1
-		iMax = int(self.borders[1]/meshWidth) + 1
+		Returns
+		-------
+		out: bool
+			Flag indicating whether the point is withing the bins' borders or not.
+		"""
+		return self.borders[0] < x <= self.borders[1] and self.borders[2] < y <= self.borders[3]
 
-		jMin = int(self.borders[2]/meshWidth) + 1
-		jMax = int(self.borders[3]/meshWidth) + 1
+	def make_grid(self, mesh_width):
+		"""
+
+		Parameters
+		----------
+		mesh_width: int, float
+			The width for the rectangular bins.
+
+		Returns
+		-------
+		grid: np.array
+			The bins as an array.
+		"""
+
+		i_min = int(self.borders[0] / mesh_width) + 1
+		i_max = int(self.borders[1] / mesh_width) + 1
+
+		j_min = int(self.borders[2] / mesh_width) + 1
+		j_max = int(self.borders[3] / mesh_width) + 1
 		
-		pX = np.array([i*meshWidth for i in range(iMin, iMax)])
-		pY = np.array([j*meshWidth for j in range(jMin, jMax)])
+		p_x = np.array([i * mesh_width for i in range(i_min, i_max)])
+		p_y = np.array([j * mesh_width for j in range(j_min, j_max)])
 
-		grid = np.array(np.meshgrid(pX,pY)).T.reshape(-1,2)
+		grid = np.array(np.meshgrid(p_x, p_y)).T.reshape(-1, 2)
 		return grid
+
 
 def main():
 	pass
+
 
 if __name__ == "__main__":
 	main()

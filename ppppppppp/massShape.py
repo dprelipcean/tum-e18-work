@@ -28,16 +28,15 @@ class BreitWigner:
         self._check_condition_spin(spin)
 
     def _check_condition_daughter_masses(self, daughter_mass1, daughter_mass2, mass):
-        """Check the physical condition that the mass of the two daughter canot be greater than the initial mass."""
+        """Check the physical condition that the mass of the two daughter cannot be greater than the initial mass."""
         if (daughter_mass1 + daughter_mass2) > mass:
             raise Exception(f"BELLEbreitWigner::BELLEbreitWigner(...): ERROR: On shell resonance mass of {self.name} "
-                            f"too light for decay into daughter particles:{mass}{daughter_mass1}+"
+                            f"too light for decay into daughter particles:{mass} < {daughter_mass1}+"
                             f"{daughter_mass2}")
 
     @staticmethod
     def _check_condition_spin(spin):
         """Check the spin for implemented scenarios."""
-
         if spin > 2:
             raise Exception(f"BELLEbreitWigner::BELLEbreitWigner(...): ERROR: Spin > 2 not supported yet")
 
@@ -176,7 +175,7 @@ class BelleAngDep(AngularDependence):
 
 class BelleS(BelleAngDep):
 
-    def eval(self, kin):
+    def eval(self, kin=None):
         return self._check_condition_kinematic(kin)
 
 
@@ -208,3 +207,42 @@ class BelleD(BelleAngDep):
         return_value /= -3
         return_value += np.power(m_bc2 - m_ac2 + (m_d2 - m_c2)*(m_a2 - m_b2)/m_ab2, 2)
         return complex(return_value, 0.)
+
+
+class Amplitude:
+
+    def __init__(self, mother_mass, fs_masses, identical_particles=True):
+
+        self.identical_particles = identical_particles
+
+        # ToDo: what is the difference between mass and mother mass?
+        self.mass = mother_mass
+        self.mother_mass = mother_mass
+        self.s = mother_mass ** 2
+
+        self.fs_masses = fs_masses
+
+    def eval(self, grid):
+
+        name = 'Test'
+        width = 1
+        spin = 0
+        bachelor_mass = 0
+        rr = 0
+        rd = 0
+
+        return_value = list()
+        for pair in grid:
+            # Value represents the dalitz plot point to be used. as m12 m13.
+
+            try:
+                breit_wigner_12 = BreitWigner(name, self.mass, width, spin, self.mother_mass, bachelor_mass,
+                                              pair[0], pair[1], rr, rd)
+
+                partial_wave = BelleS(isobar_index=12, fs_masses=self.fs_masses)
+            except Exception:
+                return np.zeros(len(grid))
+
+            return_value.append(breit_wigner_12.eval(self.s) * partial_wave.eval())
+
+        return np.asarray(return_value)
