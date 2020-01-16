@@ -2,89 +2,105 @@
 # chi2model.py
 # Created: 2019-11-22 09:11:21.158962
 # Author: Fabian Krinner
-import os, sys
+
 import numpy as np
 import ROOT
 
-from utils import isValidDalitzPoint, abs2
+from utils import is_valid_dalitz_point, hub  # , abs2
 
 import bins
+from ppppppppp.massShape import Amplitude
 
-class dalitzChi2model:
-	def __init__(self, mMother, fsMasses, bins, meshWidth, functions, nTermInBin = 10):
+
+class DalitzChi2model:
+	"""Class implementing a Dalitz chi2 model."""
+	def __init__(self, m_mother, fs_masses, _bins, mesh_width, functions, n_term_in_bin=10):
 		"""
-		@param mMother    mass of the mother particle
-		@param fsMasses   list of final state masses: [m1, m2, m3] with m12**2 on the X-axis and m13**2 on the Y-axis
-		@param bins       list of bins to use. Format [(m12_low, m12_high, m13_low, m13_high), ... ]
-		@param meshWidth  distance of two points in one direction on the integral mesh
-		@param functions  list of functions ( = pratialWaves)
-		@param nTermInBin (estimated) number of non-zero terms in every bin ( = nonZeroAmpls**2)
+
+		Parameters
+		----------
+		m_mother: float
+			mass of the mother particle
+		fs_masses: ndarray, list[float]
+			list of final state masses: [m1, m2, m3] with m12**2 on the X-axis and m13**2 on the Y-axis
+		_bins:
+			list of bins to use. Format [(m12_low, m12_high, m13_low, m13_high), ... ]
+		mesh_width: float
+			distance of two points in one direction on the integral mesh
+		functions:
+			list of functions ( = partialWaves)
+		n_term_in_bin: int, optional
+			(estimated) number of non-zero terms in every bin ( = nonZeroAmpls**2)
+			Defaults to 10.
 		"""
 
 		# Physics
-		self.mMother    = mMother
-		self.s          = mMother**2
-		self.fsMasses   = fsMasses
-		self.fsSquare   = [m**2 for m in fsMasses]
+		self.mMother = m_mother
+		self.s = m_mother ** 2
+		self.fsMasses = fs_masses
+		self.fsSquare = [m ** 2 for m in fs_masses]
 
 		# Binning
-		self.nBins      = len(bins)
-		self.bins       = bins
+		self.nBins = len(_bins)
+		self.bins = _bins
 
 		# Functions
-		self.functions  = functions
-		self.nFunc      = len(functions)
+		self.functions = functions
+		self.nFunc = len(functions)
 
 		# Options
-		self.meshWidth       = meshWidth
-		self.nTermInBin = nTermInBin
+		self.meshWidth = mesh_width
+		self.n_term_in_bin = n_term_in_bin
 
 		# Kinematic validity of bins
-		self.nValid          = None
-		self.validBins       = None # List of kinematically allowed bins
+		self.nValid = None
+		self.validBins = None  # List of kinematically allowed bins
 
 		# Data
-		self.data            = None
-		self.errors          = None
+		self.data = None
+		self.errors = None
+		self.inv_errors = None
 
 		# Integrals
-		self.totalNmesh      = None
-		self.nMeshBin        = None
-		self.integrals       = None
+		self.totalNmesh = None
+		self.nMeshBin = None
+		self.integrals = None
 		self.integralIndices = None
-		self.norms           = None
+		self.norms = None
 
-		if not self.checkContiguous():
-			print("dalitzChi2model.__init__(...): WARNING: The rewceived bins do not contiguously cover the Dalitz plot.")
+		if not self.check_contiguous(False):
+			print("dalitzChi2model.__init__(...): WARNING: The received bins do not contiguously cover the Dalitz plot.")
 
 		# Plotting
-		self.binningX = None
-		self.binningY = None
-		self.makeMaximalBinning()
+		self.binning_x = None
+		self.binning_y = None
+		self.make_maximal_binning()
 
-	def makeMaximalBinning(self):
+	def make_maximal_binning(self):
 		"""
 		Creates all bin borders 
 		"""
-		binningX = []
-		binningY = []
+		print("Making maximal binning.")
+		binning_x = []
+		binning_y = []
 		for b in self.bins:
-			allBorders = b.getAllBorders()
-			for borders in allBorders:
-				if not borders[0] in binningX:
-					binningX.append(borders[0])
-				if not borders[1] in binningX:
-					binningX.append(borders[1])
-				if not borders[2] in binningY:
-					binningY.append(borders[2])
-				if not borders[3] in binningY:
-					binningY.append(borders[3])
-		binningX.sort()
-		binningY.sort()
-		self.binningX = np.array(binningX, dtype = np.float64)
-		self.binningY = np.array(binningY, dtype = np.float64)
+			all_borders = b.get_all_borders()
+			for borders in all_borders:
+				if not borders[0] in binning_x:
+					binning_x.append(borders[0])
+				if not borders[1] in binning_x:
+					binning_x.append(borders[1])
+				if not borders[2] in binning_y:
+					binning_y.append(borders[2])
+				if not borders[3] in binning_y:
+					binning_y.append(borders[3])
+		binning_x.sort()
+		binning_y.sort()
+		self.binning_x = np.array(binning_x, dtype=np.float64)
+		self.binning_y = np.array(binning_y, dtype=np.float64)
+		print("Maximal binning finished.")
 
-	def getOverallFunctionIndex(self,f,g):
+	def get_overall_function_index(self, f, g):
 		"""
 		Allows one-dimensional indexing of two functions
 		@param f first function index
@@ -92,312 +108,372 @@ class dalitzChi2model:
 		"""
 		return f * self.nFunc + g
 
-	def getSingleFunctionIndices(self, t):
+	def get_single_function_indices(self, t):
 		"""
 		Allows one-dimensional indexing of two functions
 		@param t combined function index
 		"""
 		f = int(t/self.nFunc)
 		g = t - self.nFunc * f
-		return f,g
+		return f, g
 
-	def findBin(self, m2_12, m2_13, breakFound = True):
+	def find_bin(self, m2_12, m2_13, break_found=True):
 		"""
 		Find the bin index to a given point on the Dalitz Plot
 		@param m2_12 invariant mass square of particles 12
 		@param m2_13 invariant mass square of particles 13
-		@param breekFound flag if break after first found bin (If False, returns the last valid bin found)
+		@param break_found flag if break after first found bin (If False, returns the last valid bin found)
 		"""
-		nFound = 0
-		nBin   = None
+		n_found = 0
+		n_bin = None
 		for b, binn in enumerate(self.bins):
 			if binn.contains(m2_12, m2_13):
-				nFound += 1
-				nBin    = b
-				if breakFound:
+				n_found += 1
+				n_bin = b
+				if break_found:
 					break
-		return nBin, nFound
+		return n_bin, n_found
 
-	def checkContiguous(self):
+	def check_contiguous(self, do=True):
 		"""
 		Checks, if the received binning is contiguous
 		"""
-		nGrid   = int(self.s/self.meshWidth)
-		linGrid = np.array([i * self.meshWidth for i in range(nGrid+1)])
-		grid    = np.array(np.meshgrid(linGrid, linGrid)).T.reshape(-1,2)
-		grid    = grid[isValidDalitzPoint(grid, self.s, self.fsSquare[0], self.fsSquare[1], self.fsSquare[2])]
-		retVal  = True
-		for i in range(grid.shape[0]):
-			t,n = self.findBin(grid[i,0], grid[i,1], breakFound = False)
-			if n == 0:
-				print( "dalitzChi2model.checkContiguous(): WARNING: No valid bin found for valid grid point: ("+str(grid[i,0]) + ", " + str(grid[i,1]) + ").")
-				retVal = False
-			if n > 1:
-                                print( "dalitzChi2model.checkContiguous(): WARNING: " + str(n) + " valid bins found for valid grid point: ("+str(grid[i,0]) + ", " + str(grid[i,1]) + ").")
-				retVal = False
-		return retVal
+		ret_val = True
+
+		if do:
+			print("Checking contigous.")
+			n_grid = int(self.s/self.meshWidth)
+			lin_grid = np.array([i * self.meshWidth for i in range(n_grid+1)])
+			grid = np.array(np.meshgrid(lin_grid, lin_grid)).T.reshape(-1, 2)
+			grid = grid[is_valid_dalitz_point(grid, self.s, self.fsSquare[0], self.fsSquare[1], self.fsSquare[2])]
+			for i in range(grid.shape[0]):
+				t, n = self.find_bin(grid[i, 0], grid[i, 1], break_found=False)
+				if n == 0:
+					error = f'dalitzChi2model.checkContiguous(): ' \
+							f'WARNING: No valid bin found for valid grid point: ({str(grid[i, 0])} {str(grid[i, 1])}).'
+					print(error)
+					ret_val = False
+				elif n > 1:
+					error = f'dalitzChi2model.checkContiguous(): ' \
+							f'WARNING: {str(n)} valid bins found for valid grid point: ({str(grid[i, 0])} {str(grid[i, 1])}).'
+					print(error)
+					ret_val = False
+
+			print("Finished hecking contigous.")
+		else:
+			print("Skipped checking contigous.")
+		return ret_val
 		
-	def makeGrid(self, nBin):
+	def make_grid(self, n_bin):
 		"""
 		Makes the integral meshgrid for a 1-D bin index
-		@param nBin bin index to make the grid for
+		@param n_bin bin index to make the grid for
 		"""
-		return self.bins[nBin].makeGrid(self.meshWidth)
+		return self.bins[n_bin].make_grid(self.meshWidth)
 
-#		binBorders = self.bins[nBin]
+		# binBorders = self.bins[nBin]
+		#
+		# iMin = int(binBorders[0]/self.meshWidth) + 1
+		# iMax = int(binBorders[1]/self.meshWidth) + 1
+		#
+		# jMin = int(binBorders[2]/self.meshWidth) + 1
+		# jMax = int(binBorders[3]/self.meshWidth) + 1
+		#
+		# pX = np.array([i*self.meshWidth for i in range(iMin, iMax)])
+		# pY = np.array([j*self.meshWidth for j in range(jMin, jMax)])
+		#
+		# grid = np.array(np.meshgrid(pX,pY)).T.reshape(-1,2)
+		# return grid
 
-#		iMin = int(binBorders[0]/self.meshWidth) + 1
-#		iMax = int(binBorders[1]/self.meshWidth) + 1
-
-#		jMin = int(binBorders[2]/self.meshWidth) + 1
-#		jMax = int(binBorders[3]/self.meshWidth) + 1
-		
-#		pX = np.array([i*self.meshWidth for i in range(iMin, iMax)])
-#		pY = np.array([j*self.meshWidth for j in range(jMin, jMax)])
-
-#		grid = np.array(np.meshgrid(pX,pY)).T.reshape(-1,2)
-#		return grid
-
-	def makeValidBins(self):
+	def make_valid_bins(self):
 		"""
 		Produces the list of valid bins i.e. the list of bins, where at least one integral point is valid
 		"""
-		self.validBins = np.zeros(self.nBins, dtype = bool)
+		self.validBins = np.zeros(self.nBins, dtype=bool)
 		for b in range(self.nBins):
-			grid  = self.makeGrid(b)
-			valid = isValidDalitzPoint(grid, self.s, self.fsSquare[0], self.fsSquare[1], self.fsSquare[2])
+			grid = self.make_grid(b)
+			valid = is_valid_dalitz_point(grid, self.s, self.fsSquare[0], self.fsSquare[1], self.fsSquare[2])
 			if np.sum(valid) > 0:
 				self.validBins[b] = True
-		for i,v in enumerate(self.validBins):
+		for i, v in enumerate(self.validBins):
 			if v:
-				print i,
-		print
+				print(i)
+
 		self.nValid = np.sum(self.validBins)
 
-	def increaseIntegralSize(self):
+	def increase_integral_size(self):
 		"""
-		Increases the sorage swize of the intergal values for each bin by one
+		Increases the storage size of the integral values for each bin by one
 		"""
-		print( "dalitzChi2model.increaseIntegralSize(): WARNING: The estimated number of non-zero ampliudes ("+str(self.nTermInBin)+") is too small. Increase by one.")
+		error = f"dalitzChi2model.increaseIntegralSize(): " \
+			f"WARNING: The estimated number of non-zero amplitudes ({str(self.n_term_in_bin)}) is too small. " \
+			f"Increase by one."
+		print(error)
 		for i in range(len(self.integrals)):
-			self.integrals[i] = np.resize(self.integrals[i], self.nTermInBin+1)
-			self.integralIndices[i] = np.resize(self.integralIndices[i], self.nTermInBin+1)
-		self.nTermInBin += 1
+			self.integrals[i] = np.resize(self.integrals[i], self.n_term_in_bin + 1)
+			self.integralIndices[i] = np.resize(self.integralIndices[i], self.n_term_in_bin + 1)
+		self.n_term_in_bin += 1
 
-	def makeIntegrals(self):
+	def make_integrals(self):
 		"""
 		Make the integral for all interference terms
 		"""
-		self.integrals       = []
+		print("Making integrals.")
+		self.integrals = []
 		self.integralIndices = []
-		self.totalNmesh      = 0
-		self.nMeshBin        = np.zeros(self.nBins, dtype = int)
+		self.totalNmesh = 0
+		self.nMeshBin = np.zeros(self.nBins, dtype=int)
 		self.norms = np.zeros(self.nFunc)
 		for t in range(self.nBins):
 			if not self.validBins[t]:
 				continue
-			indices, integral, nMesh = self.makeBinIntegrals(t)
-			self.totalNmesh += nMesh
-			self.nMeshBin[t] = nMesh
+			indices, integral, n_mesh = self.make_bin_integrals(t)
+			self.totalNmesh += n_mesh
+			self.nMeshBin[t] = n_mesh
 			self.integrals.append(integral)
 			self.integralIndices.append(indices)
 			for i, I in enumerate(indices):
-				f,g = self.getSingleFunctionIndices(I)
+				f, g = self.get_single_function_indices(I)
 				if f == g:
 					self.norms[f] += integral[i]
-		# Finally do the normalization
-		for i,I in enumerate(self.integralIndices):
-			for j,J in enumerate(I):
-				f,g = self.getSingleFunctionIndices(J)
-				self.integrals[i][j] /= (self.norms[f] * self.norms[g])**.5
 
-	def makeBinIntegrals(self, nBin):
+		# Finally do the normalization
+		for i, I in enumerate(self.integralIndices):
+			for j, J in enumerate(I):
+				f, g = self.get_single_function_indices(J)
+				self.integrals[i][j] /= (self.norms[f] * self.norms[g])**.5
+		print("Finished making integrals.")
+
+	def make_bin_integrals(self, n_bin):
 		"""
 		Make the integral for all interference terms for a single bin
-		@param nBin bin index to calculate the integral for
+		@param n_bin bin index to calculate the integral for
 		"""
-		if not self.validBins[nBin]:
+		if not self.validBins[n_bin]:
 			return None
-		grid      = self.makeGrid(nBin)
-		validGrid = isValidDalitzPoint(grid, self.s, self.fsSquare[0], self.fsSquare[1], self.fsSquare[2])
-		nMesh     = np.sum(validGrid)
-		grid      = grid[validGrid,:]
-		fEvals    = np.array([f(grid) for f in self.functions])
-		integral  = np.dot(np.conjugate(fEvals), fEvals.T)
-		fIndices  = np.full(self.nTermInBin, -1, dtype = int)
-		lintegral = np.zeros(self.nTermInBin, dtype = complex)
-		count     = 0
+		grid = self.make_grid(n_bin)
+		# print(f'MyGrid is: {grid}')
+		valid_grid = is_valid_dalitz_point(grid, self.s, self.fsSquare[0], self.fsSquare[1], self.fsSquare[2])
+		n_mesh = np.sum(valid_grid)
+		grid = grid[valid_grid, :]
+		f_evals = np.array([f(grid) for f in self.functions])
+		integral = np.dot(np.conjugate(f_evals), f_evals.T)
+		f_indices = np.full(self.n_term_in_bin, -1, dtype=int)
+		lintegral = np.zeros(self.n_term_in_bin, dtype=complex)
+		count = 0
 		for f in range(self.nFunc):
-			for g in range(f,self.nFunc):
-				if integral[f,g] == 0.+0.j:
+			for g in range(f, self.nFunc):
+				if integral[f, g] == 0.+0.j:
 					continue
-				if count == self.nTermInBin:
-					fIndices.resize(self.nTermInBin+1) # Do not set the last value here, since it will be overwritten in any case (won't stay empty)
-					lintegral.resize(self.nTermInBin+1)
-					self.increaseIntegralSize()
+				if count == self.n_term_in_bin:
+					# Do not set the last value here, since it will be overwritten in any case (won't stay empty)
+					f_indices.resize((self.n_term_in_bin + 1, ))
+					lintegral.resize((self.n_term_in_bin + 1, ))
+					self.increase_integral_size()
 
-				sfi              = self.getOverallFunctionIndex(f,g)
-				fIndices[count]  = sfi
-				lintegral[count] = integral[f,g]
+				sfi = self.get_overall_function_index(f, g)
+				f_indices[count] = sfi
+				lintegral[count] = integral[f, g]
 				count += 1
-		return fIndices, lintegral, nMesh
+		return f_indices, lintegral, n_mesh
 
-	def getIntentsity(self, prodAmps):
+	def get_intensity(self, prod_amps):
 		"""
 		Get the model intensity for all valid bins.
-		@param prodAmps production amplotudes as complex numpy array
+		@param prod_amps production amplotudes as complex numpy array
 		"""
-		retVal       = np.zeros(self.nValid, dtype = float)
-		prodProdAmps = np.zeros(self.nFunc**2)
+		ret_val = np.zeros(self.nValid, dtype=float)
+		prod_prod_amps = np.zeros(self.nFunc**2)
 		for f in range(self.nFunc):
-			for g in range(f,self.nFunc):
-				sfi = self.getOverallFunctionIndex(f,g)
-				prodProdAmps[sfi] = np.conjugate(prodAmps[f])*prodAmps[g]
+			for g in range(f, self.nFunc):
+				sfi = self.get_overall_function_index(f, g)
+				prod_prod_amps[sfi] = np.conjugate(prod_amps[f]) * prod_amps[g]
 				if f == g:
-					prodProdAmps[sfi] /= 2 # Since below, we sum over 2*Re(...), the diagonal part need a factor of 1/2
+					prod_prod_amps[sfi] /= 2  # Since below, we sum over 2*Re(...), the diagonal part need a factor of 1/2
 		for t in range(self.nValid):
-			val = 2*np.dot(prodProdAmps[self.integralIndices[t]], self.integrals[t]).real
-			retVal[t] = val
-		return retVal
+			val = 2*np.dot(prod_prod_amps[self.integralIndices[t]], self.integrals[t]).real
+			ret_val[t] = val
+		return ret_val
 
 	def eval(self, params):
 		"""
 		Evaluate the chi2 function
 		@param params production amplutdes as real-values numpy array [re_0, im_0, re_1, ...]
 		"""
-		prodAmps = params[::2] + 1.j * params[1::2]
-		model    = self.getIntentsity(prodAmps)
-		return np.sum((model - self.data)**2 * self.invErrors)
+		prod_amps = params[::2] + 1.j * params[1::2]
+		model = self.get_intensity(prod_amps)
+		return np.sum((model - self.data) ** 2 * self.inv_errors)
 
-	def loadData(self, m2_12, m2_13):
+	def load_data(self, m2_12, m2_13):
 		"""
 		Load the data points
 		@param m2_12 numpy array for kinematic values for m2_12 of the events
 		@param m2_13 numpy array for kinematic values for m2_13 of the events
 		"""
-		nDat = len(m2_12)
-		if not len(m2_13) == nDat:
+		n_dat = len(m2_12)
+		if not len(m2_13) == n_dat:
 			raise ValueError("Number of data points does not match.")
-		data = np.zeros(self.nBins, dtype = float)
-		for d in range(nDat):
-			t, n = self.findBin(m2_12[d], m2_13[d], True)
+		data = np.zeros(self.nBins, dtype=float)
+		for d in range(n_dat):
+			t, n = self.find_bin(m2_12[d], m2_13[d], True)
 			if n == 0:
-				print ("dalitzChi2model.loadData(...): WARNING: Could not find a valid bin for the data point: (" + str(m2_12[d]) + ", " + str(m2_13[d]) + ").")
+				error = f"dalitzChi2model.loadData(...): " \
+						f"WARNING: Could not find a valid bin for the data point: ({str(m2_12[d])} {str(m2_13[d])})."
+				print(error)
 				continue
 			data[t] += 1.
-		countValid = 0
-		self.data  = np.zeros(self.nValid, dtype = float)
+		count_valid = 0
+		self.data = np.zeros(self.nValid, dtype=float)
 		for t in range(self.nBins):
 			if not self.validBins[t]:
 				if data[t] > 0:
-					print("dalitzChi2model.loadData(...): WARNING: " + str(data[t]) + " events laying in invalid bin " + str(t) + ": " + str(self.bins[t]))
+					error = f"dalitzChi2model.loadData(...): " \
+							f"WARNING: {str(data[t])} events laying in invalid bin {str(t)}: {str(self.bins[t])}"
+					print(error)
 				continue
-			self.data[countValid] = data[t]
-			countValid += 1
-		self.invErrors = 1./self.data**.5
-		self.invErrors[np.isinf(self.invErrors)] = 0.
+			self.data[count_valid] = data[t]
+			count_valid += 1
+		self.inv_errors = 1. / self.data ** .5
+		self.inv_errors[np.isinf(self.inv_errors)] = 0.
 
-	def makeTheoHist(self, params):
+	def make_theo_hist(self, params):
 		"""
 		Produces a histogram for the theory
-		@param params production amplitudes to be used (real-valued numpy array: [re_0, im_0, re_1, ...])
+		@params params production amplitudes to be used (real-valued numpy array: [re_0, im_0, re_1, ...])
 		"""
-		prodAmps = params[::2] + 1.j* params[1::2]
-		return self.makeHist(self.getIntentsity(prodAmps), "_intens_theo")
+		prod_amps = params[::2] + 1.j * params[1::2]
+		return self.make_hist(self.get_intensity(prod_amps), "_intens_theo")
 
-	def makeDataHist(self):
+	def make_data_hist(self):
 		"""
 		Produces a histogram for the data points
 		"""
-		return self.makeHist(self.data, "_data")
+		return self.make_hist(self.data, "_data")
 
-	def makeHist(self, data, tag = ''):
+	def make_hist(self, data, tag=''):
 		"""
 		Produces a histogram from given data
 		@param data numpy array of the data to be plotted
-		@param tag  string to name the hsitogram after
+		@param tag  string to name the histogram after
 		"""
-		hist       = ROOT.TH2D("Dalitz" + tag,"Dalitz" + tag,len(self.binningX)-1, self.binningX,len(self.binningY)-1, self.binningY)
-		delta      = self.meshWidth # offset from the actual border
-		countValid = 0	
+		nx = len(self.binning_x)
+		ny = len(self.binning_y)
+
+		hist = ROOT.TH2D(f"Dalitz{tag}", f"Dalitz{tag}", nx - 1, self.binning_x, ny - 1, self.binning_y)
+		delta = self.meshWidth  # offset from the actual border
+		count_valid = 0
 		for b in range(self.nBins):
 			if self.validBins[b]:
-				if not isinstance(self.bins[b], bins.rectangularBin):
-					print "WARNING: The plotting is not set up to handle non-rectangular bins."
+				if not isinstance(self.bins[b], bins.RectangularBin):
+					print("WARNING: The plotting is not set up to handle non-rectangular bins.")
 
-				borders = self.bins[b].getBorders()
-				iMin    = hist.GetXaxis().FindBin(borders[0] + delta)
-				iMax    = hist.GetXaxis().FindBin(borders[1] - delta)
-				jMin    = hist.GetYaxis().FindBin(borders[2] + delta)
-				jMax    = hist.GetYaxis().FindBin(borders[3] - delta)
-				for i in range(iMin, iMax+1):
-					for j in range(jMin, jMax+1):
-						hist.SetBinContent(i,j,data[countValid]/self.nMeshBin[b])
-				countValid += 1
+				borders = self.bins[b].get_borders()
+				i_min = hist.GetXaxis().FindBin(borders[0] + delta)
+				i_max = hist.GetXaxis().FindBin(borders[1] - delta)
+				j_min = hist.GetYaxis().FindBin(borders[2] + delta)
+				j_max = hist.GetYaxis().FindBin(borders[3] - delta)
+				for i in range(i_min, i_max+1):
+					for j in range(j_min, j_max+1):
+						hist.SetBinContent(i, j, data[count_valid]/self.nMeshBin[b])
+				count_valid += 1
 		return hist
 
-def uesen(g):
-	return g[:,0]**2
 
-def osh(g):
-	return np.zeros(g.shape[0]) + 1.1
+def generate_random_data(m_pi, m_kc, m_dc, n_data):
+	"""Generate random data for testing purposes.
 
-def heb(g):
-	return np.full(g.shape[0],1.)
+	Parameters
+	----------
+	m_pi
+	m_kc
+	m_dc
+	n_data: int
+		Number of data points to generate.
 
-def hub(g):
-	return g[:,0] + g[:,1]
+	Returns
+	-------
+	m2s: ndarray
+		N x 2 array of points.
+	"""
+	m2s = np.random.uniform((m_pi+m_kc)**2, (m_dc - m_pi)**2, 2*n_data)
+	m2s.shape = (n_data, 2)
+	return m2s
 
-def hob(g):
-	return g[:,0] * g[:,1]
 
-def halfBudalf(g):
-	retVal = g[:,0] + g[:,1]
-	retVal[g[:,0] < 1.] = 0.
-	return retVal
+def read_data_monte_carlo():
+	"""Read the monte carlo generated data file."""
+	with open('../CP_MC_data_SPD.CP_MC') as f:
+		data = list()
+		for row in f:
+			mother, bachelor, isobar = row.split()
+			isobar = isobar[:-1]
+
+			try:
+				data.append(float(bachelor))
+				data.append(float(isobar))
+			except ValueError:
+				data.pop(-1)
+				continue
+
+	a = np.asarray(data)
+	a.shape = (int(len(data)/2), 2)
+	return a
+
+
+def create_bins(m_dc):
+	"""Create the bins for tor the Dalitz plot."""
+	n_bins = 20
+
+	binning_x = np.linspace(0., m_dc**2, n_bins)
+	binning_y = np.linspace(0., m_dc**2, n_bins)
+
+	bin_list = []
+	for i in range(len(binning_x)-1):
+		for j in range(len(binning_y)-1):
+			bin_list.append(bins.RectangularBin(binning_x[i], binning_x[i + 1], binning_y[j], binning_y[j + 1]))
+	return bin_list
+
 
 def main():
-	mDc = 1.86958
-	mPi = 0.13957
-	mKc = 0.493677
+	m_dc = 1.86958
+	m_pi = 0.13957
+	m_kc = 0.493677
 
-	fsMasses = [mKc, mPi, mPi]
+	fs_masses = [m_kc, m_pi, m_pi]
 
-	nBins = 20
+	bin_list = create_bins(m_dc)
 
-	binningX = np.linspace(0.,mDc**2,nBins)
-	binningY = np.linspace(0.,mDc**2,nBins)
+	# fcns = [osh, heb, hub, hob, uesen, halfBudalf]
+	amplitude = Amplitude(mother_mass=m_dc, fs_masses=fs_masses)
+	fcns = [amplitude.eval]
+	print("Amplitude created and functions assigned.")
 
-	binList = []
-	for i in range(len(binningX)-1):
-		for j in range(len(binningY)-1):
-			binList.append(bins.rectangularBin(binningX[i], binningX[i+1], binningY[j], binningY[j+1]))
-#	fcns = [osh,heb,hub,hob,uesen, halfBudalf]
-	fcns = [heb ,hub]
-	c2model = dalitzChi2model(mDc, fsMasses, binList , 0.001, fcns, 10)
-	c2model.makeValidBins()
-	c2model.makeIntegrals()
+	c2model = DalitzChi2model(m_dc, fs_masses, bin_list, 0.001, fcns, 10)
+	print("Chi2 model created.")
 
-	nData = 10000
-	m2s = np.random.uniform((mPi+mKc)**2, (mDc - mPi)**2, 2*nData)
-	m2s.shape = (nData, 2)
-	valid = isValidDalitzPoint(m2s, mDc**2, fsMasses[0]**2, fsMasses[1]**2, fsMasses[2]**2)
-	print "nGOOD =",np.sum(valid)
+	c2model.make_valid_bins()
+	c2model.make_integrals()
 
-	m2s = m2s[valid,:]
+	# m2s = generate_random_data(m_pi, m_kc, m_dc,< n_data=10000)
+	m2s = read_data_monte_carlo()
+
+	valid = is_valid_dalitz_point(m2s, m_dc ** 2, fs_masses[0] ** 2, fs_masses[1] ** 2, fs_masses[2] ** 2)
+	print(f"nGOOD ={np.sum(valid)}")
+
+	m2s = m2s[valid, :]
 	weights = 1. + hub(m2s)**2
 
 	mxx = np.max(weights)
 
 	weights -= np.random.random(weights.shape) * mxx
 
-	m2s = m2s[weights > 0.,:]
+	m2s = m2s[weights > 0., :]
 
-	print "nDeWeight =",np.sum(weights > 0)
+	print(f"nDeWeight ={np.sum(weights > 0)}")
 
-	c2model.loadData(m2s[:,0], m2s[:,1])
+	c2model.load_data(m2s[:, 0], m2s[:, 1])
 
-#	params = np.random.uniform(-1.,1.,2*len(fcns))
+	# params = np.random.uniform(-1.,1.,2*len(fcns))
 	params = np.zeros(2*len(fcns))		
 
 	from iminuit import Minuit
@@ -407,17 +483,17 @@ def main():
 
 	vals = np.array([m.values['x' + str(i)] for i in range(2*len(fcns))])
 
-	h1 = c2model.makeTheoHist(vals)
+	h1 = c2model.make_theo_hist(vals)
 	h1.Draw('col')
-	raw_input()
-	h2 = c2model.makeDataHist()
+	input()
+	h2 = c2model.make_data_hist()
 	h2.Draw('col')
-	raw_input()
-	print vals
+	input()
+	print(vals)
 
-	ntfrr =  ((vals[0] + 1.j*vals[1]) * (vals[2] - 1.j * vals[3]))**2
-	print ntfrr/abs(ntfrr), "should be real (phase of pi/2)"
+	ntfrr = ((vals[0] + 1.j*vals[1]) * (vals[2] - 1.j * vals[3])) ** 2
+	print(f"{ntfrr/abs(ntfrr)} should be real (phase of pi/2)")
+
 
 if __name__ == "__main__":
 	main()
-

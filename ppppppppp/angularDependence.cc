@@ -192,11 +192,11 @@ BELLE_S::BELLE_S(size_t isobarIndex, const realVector& fsMasses, std::shared_ptr
 }
 
 complex BELLE_S::eval(const realVector &kin) const {
-	if (kin.size() != _kinSignature->nKin()) {
-		utils::makeError("BELLE_S::eval(...)","Number of kinematic variables does not match (" + std::to_string(kin.size()) + " != " + std::to_string(_kinSignature->nKin() ) +  "). Returning zero.");
-		return complex(0.,0.);
-	}
-	return complex(1.,0.);
+        if (kin.size() != _kinSignature->nKin()) {
+            utils::makeError("BELLE_S::eval(...)","Number of kinematic variables does not match (" + std::to_string(kin.size()) + " != " + std::to_string(_kinSignature->nKin() ) +  "). Returning zero.");
+            return complex(0.,0.);
+        }
+        return complex(1.,0.);
 }
 
 BELLE_P::BELLE_P(size_t isobarIndex, const realVector& fsMasses, std::shared_ptr<kinematicSignature> kinSignature) : angularDependence(kinSignature, "BELLE_P"), _isobarIndex(isobarIndex), _fsMasses() {
@@ -225,7 +225,7 @@ complex BELLE_P::eval(const realVector &kin) const {
 	double mAC2 = 0.;
 	double mBC2 = 0.;
 
-	double sKpiWrong = mD2 + _fsMasses[0]*_fsMasses[0] +  _fsMasses[1]*_fsMasses[1]+ _fsMasses[2]*_fsMasses[2]- kin[1] - kin[2];
+    double sKpiWrong = mD2 + _fsMasses[0]*_fsMasses[0] +  _fsMasses[1]*_fsMasses[1]+ _fsMasses[2]*_fsMasses[2]- kin[1] - kin[2];
 	if (_isobarIndex == 12) { // ((piRight, Ks), piWrong)
 		mA2 = _fsMasses[0]*_fsMasses[0];
 		mB2 = _fsMasses[1]*_fsMasses[1];
@@ -278,7 +278,7 @@ BELLE_D::BELLE_D(size_t isobarIndex, const realVector& fsMasses, std::shared_ptr
 	_fsMasses = fsMasses;
 }
 
-complex BELLE_D::eval(const realVector &kin) const {
+complex BELLE_D::eval(const realVector &kin) const {_isobarCombination
 	if (kin.size() != _kinSignature->nKin()) {
 		utils::makeError("BELLE_D::eval(...)","Number of kinematic variables does not match (" + std::to_string(kin.size()) + " != " + std::to_string(_kinSignature->nKin() ) +  "). Returning zero.");
 		return complex(0.,0.);
