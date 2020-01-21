@@ -442,7 +442,7 @@ def main():
 	fs_masses = [m_kc, m_pi, m_pi]
 
 	bin_list = create_bins(m_dc)
-
+	
 	# fcns = [osh, heb, hub, hob, uesen, halfBudalf]
 	amplitude = Amplitude(mother_mass=m_dc, fs_masses=fs_masses)
 	fcns = [amplitude.eval]
