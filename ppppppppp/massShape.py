@@ -70,12 +70,10 @@ class BreitWigner:
 
     def _check_condition_daughter_masses(self, daughter_mass1, daughter_mass2, mass):
         """Check the physical condition that the mass of the two daughter cannot be greater than the initial mass."""
-        # ToDo
-        # if (daughter_mass1 + daughter_mass2) > mass:
-        #     raise Exception(f"BELLEbreitWigner::BELLEbreitWigner(...): ERROR: On shell resonance mass of {self.name} "
-        #                     f"too light for decay into daughter particles:{mass} < {daughter_mass1}+"
-        #                     f"{daughter_mass2}")
-        pass
+        if (daughter_mass1 + daughter_mass2) > mass:
+            raise Exception(f"BELLEbreitWigner::BELLEbreitWigner(...): ERROR: On shell resonance mass of {self.name} "
+                            f"too light for decay into daughter particles:{mass} < {daughter_mass1}+"
+                            f"{daughter_mass2}")
 
     @staticmethod
     def _check_condition_spin(spin):
@@ -150,12 +148,24 @@ class AngularDependence:
         pass
 
     def _check_condition_isobarindex(self, isobar_index):
+        """Check that the isobar index is among the valid values.
+
+        Parameters
+        ----------
+        isobar_index: int
+        """
         if isobar_index not in self.valid_isobar_indexes:
             raise Exception(f"None of the three possible isobar masses match (12, 13 and 23) the given value: "
                             f"{isobar_index}")
 
     @staticmethod
     def _check_condition_fsmasses(fs_masses):
+        """Check that the fs_masses respect some conditions.
+
+        Parameters
+        ----------
+        fs_masses: ndarray, tuple[float}
+        """
         if len(fs_masses) != 3:
             raise Exception(f"Number of final state masses given is not three.")
 
@@ -368,21 +378,24 @@ class Amplitude:
 
             kin = np.array([np.power(self.mother_mass, 2), pair[0] ** 2, pair[1] ** 2])
 
-            breit_wigner_12 = BreitWigner(name, self.mass, width, spin, self.mother_mass, bachelor_mass,
-                                          pair[0], pair[1], rr, rd)
+            try:
+                breit_wigner_12 = BreitWigner(name, self.mass, width, spin, self.mother_mass, bachelor_mass,
+                                              pair[0], pair[1], rr, rd)
 
-            partial_wave_12 = BelleS(isobar_index=12, fs_masses=self.fs_masses)
+                partial_wave_12 = BelleP(isobar_index=12, fs_masses=self.fs_masses)
 
-            breit_wigner_13 = BreitWigner(name, self.mass, width, spin, self.mother_mass, bachelor_mass,
-                                          pair[1], pair[0], rr, rd)
+                breit_wigner_13 = BreitWigner(name, self.mass, width, spin, self.mother_mass, bachelor_mass,
+                                              pair[1], pair[0], rr, rd)
 
-            partial_wave_13 = BelleS(isobar_index=13, fs_masses=self.fs_masses)
+                partial_wave_13 = BelleP(isobar_index=13, fs_masses=self.fs_masses)
+            except Exception:
+                continue
 
             if self.identical_particles:
                 val = breit_wigner_12.eval(self.s) * partial_wave_12.eval(kin) \
                       + breit_wigner_13.eval(self.s) * partial_wave_13.eval(kin)
             else:
-                # ToDo: what if the paticles are not identical?
+                # ToDo: what if the particles are not identical?
                 val = None
 
             return_value.append(val)
