@@ -208,21 +208,3 @@ class BelleD(BelleAngDep):
         return_value = self._compute_return_value(m_d2, m_a2, m_b2, m_c2, m_ab2, m_ac2, m_bc2)
 
         return complex(return_value, 0.)
-
-
-def main():
-    m_dc = 1.86958
-    m_pi = 0.13957
-    m_kc = 0.493677
-
-    fs_masses = [m_kc, m_pi, m_pi]
-    wave = BelleS(isobar_index=12, fs_masses=fs_masses)
-    mother_mass = m_dc
-
-    kin = np.array([np.power(mother_mass, 2), s_12, s_13])
-
-    wave.eval(kin)
-
-
-if __name__ == "__main__":
-    main()

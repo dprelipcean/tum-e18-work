@@ -109,7 +109,7 @@ class BreitWigner:
             fr = np.power((np.power(self.rr * p_r, 2) + 1) / (np.power(self.rr * p_ab, 2) + 1), .5)
             # fd = np.power((np.power(self.RD * p_d, 2)+1) / (np.power(self.RD * p_abc, 2)+1), .5)
             fd = np.power(1. / (np.power(self.rd * p_abc, 2) + 1), .5)
-        elif self.spin == 2:
+        else:  # self.spin == 2:
             xr = self.rr * self.rr * p_r * p_r
             x_ab = self.rr * self.rr * p_ab * p_ab
 
@@ -128,15 +128,16 @@ class BreitWigner:
         # Use this for real BreitWigner:
         # ret_val = np.abs(complex(fr * fd, 0.) / ((np.power(self.mass, 2) - s12) + np.power(self.mass * gamma, 2)))
 
-        if not ret_val.real or not ret_val.imag:
-            print(f"s12 = {s12} sDaughter1 = {s_daughter1} sDaughter2 = {s_daughter2} p_r = {p_r} p_ab = {p_ab} "
-                  f"fr = {fr} fd = {fd} gamma = {gamma}")
-        print(f'ret_val: {ret_val}')
+        # if not ret_val.real or not ret_val.imag:
+        #     print(f"s12 = {s12} sDaughter1 = {s_daughter1} sDaughter2 = {s_daughter2} p_r = {p_r} p_ab = {p_ab} "
+        #           f"fr = {fr} fd = {fd} gamma = {gamma}")
+        # print(f'ret_val: {ret_val}')
 
         return ret_val
 
 
-def main():
+def plot_breit_wigner():
+    """Plot the BreitWigner function."""
 
     test_mass = 1
 
@@ -152,7 +153,8 @@ def main():
 
     breit_wigner = BreitWigner(name='TestBreitWigner', mass=test_mass, width=1, spin=0,
                                mother_mass=m_dc,
-                               bachelor_mass=bachelor_mass, daughter_mass1=daughter_mass1, daughter_mass2=daughter_mass2)
+                               bachelor_mass=bachelor_mass,
+                               daughter_mass1=daughter_mass1, daughter_mass2=daughter_mass2)
 
     test_points = np.linspace(0, 4, 200)
     val_points = list()
@@ -163,20 +165,17 @@ def main():
     breit_wigner_points_amplitude = list()
 
     for val in test_points:
-        try:
-            ret_val = breit_wigner.eval(val)
+        ret_val = breit_wigner.eval(val)
 
-            breit_wigner_points_real.append(ret_val.real)
-            breit_wigner_points_imaginary.append(ret_val.imag)
+        breit_wigner_points_real.append(ret_val.real)
+        breit_wigner_points_imaginary.append(ret_val.imag)
 
-            breit_wigner_points_amplitude.append(abs(ret_val))
+        breit_wigner_points_amplitude.append(abs(ret_val))
 
-            val_points.append(val)
-        except Exception:
-            pass
+        val_points.append(val)
 
     plot(val_points, breit_wigner_points_real, breit_wigner_points_imaginary, breit_wigner_points_amplitude)
 
 
 if __name__ == '__main__':
-    main()
+    plot_breit_wigner()

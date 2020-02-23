@@ -8,7 +8,7 @@ import ROOT
 
 from bins.utils import is_valid_dalitz_point, hub  # , abs2
 
-import bins
+from bins.bins import RectangularBin
 from amplitudes.amplitude import Amplitude
 
 
@@ -367,7 +367,7 @@ class DalitzChi2model:
         count_valid = 0
         for b in range(self.nBins):
             if self.validBins[b]:
-                if not isinstance(self.bins[b], bins.RectangularBin):
+                if not isinstance(self.bins[b], RectangularBin):
                     print("WARNING: The plotting is not set up to handle non-rectangular bins.")
 
                 borders = self.bins[b].get_borders()

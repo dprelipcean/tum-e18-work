@@ -13,6 +13,7 @@ class RectangularBin:
 
     def __init__(self, x_min, x_max, y_min, y_max):
         self.borders = [x_min, x_max, y_min, y_max]
+        self.value = 0
 
     def get_all_borders(self):
         """Return the borders of the bins as a list."""
@@ -21,6 +22,9 @@ class RectangularBin:
     def get_borders(self):
         """Return the borders of the bins."""
         return self.borders
+
+    def increment_value(self):
+        self.value += 1
 
     def contains(self, x, y):
         """Check whether a point is contained within the bins' borders.

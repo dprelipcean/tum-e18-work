@@ -6,6 +6,8 @@
 
 import numpy as np
 
+from amplitudes.breit_wigner import BreitWigner
+
 from analyses.collect_data import read_data_monte_carlo
 from bins.bins import create_bins
 from bins.chi2model import DalitzChi2model
@@ -15,16 +17,10 @@ from amplitudes.angular_dependencies import BelleS, BelleP, BelleD
 
 from data.metadata import DATA_FILE_CHANNELS
 
+from amplitudes.constants import m_dc, fs_masses
 
-def main():
-    m_dc = 1.86958
-    m_pi = 0.13957
-    m_kc = 0.493677
 
-    fs_masses = [m_kc, m_pi, m_pi]
-
-    bin_list = create_bins(m_dc, n_bins=200)
-
+def initialize_functions():
     fcns = list()
     for wave in DATA_FILE_CHANNELS.keys():
         if wave == 's_wave':
@@ -39,8 +35,19 @@ def main():
             width = resonance['width']
 
             amplitude = Amplitude(mass=mass, width=width, mother_mass=m_dc, fs_masses=fs_masses,
+                                  resonance_model=BreitWigner,
                                   angular_dependence_class=angular_dependence_class)
             fcns.append(amplitude.eval)
+
+    return fcns
+
+
+def main():
+
+    bin_list = create_bins(m_dc, n_bins=10)[0]
+
+    fcns = initialize_functions()
+
     print("Amplitude created and functions assigned.")
 
     c2model = DalitzChi2model(m_dc, fs_masses, bin_list, 0.01, fcns, 10)
