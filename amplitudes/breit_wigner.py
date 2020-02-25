@@ -75,10 +75,10 @@ class BreitWigner:
         if spin > 2:
             raise Exception(f"BELLEbreitWigner::BELLEbreitWigner(...): ERROR: Spin > 2 not supported yet")
 
-    def eval(self, s12):
+    def eval(self, s12, constant_gamma=True):
         """Evaluate the Breit-Wigner function."""
         m12 = np.power(s12, 1/2)
-        self._check_condition_daughter_masses(m12, self.daughter_mass1, self.daughter_mass2)
+        # self._check_condition_daughter_masses(m12, self.daughter_mass1, self.daughter_mass2)
 
         # ToDo: check why is this needed
         # if (m12 > self.mother_mass - self.bachelor_mass) or (m12 < self.daughter_mass2 + self.daughter_mass2):
@@ -120,8 +120,11 @@ class BreitWigner:
             # fd = np.power((np.power(xD-3., 2) + 9 * xD) / (np.power(x_abc-3., 2) + 9 * x_abc), .5)
             fd = np.power(1. / (np.power(x_abc-3., 2) + 9 * x_abc), .5)
 
-        gamma = self.width * self.mass / m12 * np.power(fr, 2) * np.power(p_ab / p_r, 2 * self.spin + 1)
-
+        # Testing purposes
+        if constant_gamma:
+            gamma = self.width * self.mass / m12 * np.power(fr, 2) * np.power(p_ab / p_r, 2 * self.spin + 1)
+        else:
+            gamma = 1
         # Use this for complex BreitWigner:
         ret_val = complex(fr * fd, 0.) / complex(np.power(self.mass, 2) - s12, - self.mass * gamma)
 
@@ -139,7 +142,6 @@ class BreitWigner:
 def plot_breit_wigner():
     """Plot the BreitWigner function."""
 
-    test_mass = 1
 
     m_dc = 1.86958
     m_pi = 0.13957
@@ -151,10 +153,6 @@ def plot_breit_wigner():
     daughter_mass1 = fs_masses[1]
     daughter_mass2 = fs_masses[2]
 
-    breit_wigner = BreitWigner(name='TestBreitWigner', mass=test_mass, width=1, spin=0,
-                               mother_mass=m_dc,
-                               bachelor_mass=bachelor_mass,
-                               daughter_mass1=daughter_mass1, daughter_mass2=daughter_mass2)
 
     test_points = np.linspace(0, 4, 200)
     val_points = list()
@@ -164,7 +162,13 @@ def plot_breit_wigner():
 
     breit_wigner_points_amplitude = list()
 
+    test_mass = 1
+
     for val in test_points:
+        breit_wigner = BreitWigner(name='TestBreitWigner', mass=test_mass, width=0.1, spin=0,
+                                   mother_mass=m_dc,
+                                   bachelor_mass=bachelor_mass,
+                                   daughter_mass1=daughter_mass1, daughter_mass2=daughter_mass2)
         ret_val = breit_wigner.eval(val)
 
         breit_wigner_points_real.append(ret_val.real)
