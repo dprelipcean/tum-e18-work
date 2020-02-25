@@ -102,7 +102,7 @@ def main():
 		for i in range(1,6):
 			num = (fcn(xEvl + delta, i-1) - fcn(xEvl,i-1))/delta
 			ana = fcn(xEvl,i)
-			print deg,i,ana,num
+			print(f'{deg},{i},{ana},{num}')
 
 if __name__ == "__main__":
 	main()
