@@ -120,11 +120,8 @@ class BreitWigner:
             # fd = np.power((np.power(xD-3., 2) + 9 * xD) / (np.power(x_abc-3., 2) + 9 * x_abc), .5)
             fd = np.power(1. / (np.power(x_abc-3., 2) + 9 * x_abc), .5)
 
-        # Testing purposes
-        if constant_gamma:
-            gamma = self.width * self.mass / m12 * np.power(fr, 2) * np.power(p_ab / p_r, 2 * self.spin + 1)
-        else:
-            gamma = 1
+        gamma = self.width * self.mass / m12 * np.power(fr, 2) * np.power(p_ab / p_r, 2 * self.spin + 1)
+
         # Use this for complex BreitWigner:
         ret_val = complex(fr * fd, 0.) / complex(np.power(self.mass, 2) - s12, - self.mass * gamma)
 
