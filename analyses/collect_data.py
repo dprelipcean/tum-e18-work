@@ -22,7 +22,7 @@ def generate_random_data(m_pi, m_kc, m_dc, n_data):
     return m2s
 
 
-def read_data_monte_carlo():
+def read_data_monte_carlo(data_range=None):
     """Read the monte carlo generated data file."""
     with open('../data/CP_MC_data_SPD.CP_MC') as f:
         data = list()
@@ -38,6 +38,12 @@ def read_data_monte_carlo():
                 continue
 
     data_size = len(data)
-    a = np.asarray(data)
-    a.shape = (int(data_size / 2), 2)
-    return a, data_size
+    if data_range:
+        data_array = np.asarray(data[0:data_range])
+        data_array.shape = (int(data_range / 2), 2)
+
+    else:
+        data_array = np.asarray(data)
+        data_array.shape = (int(data_size / 2), 2)
+
+    return data_array, data_size

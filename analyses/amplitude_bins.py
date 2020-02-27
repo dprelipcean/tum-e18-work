@@ -17,7 +17,7 @@ bachelor_mass = fs_masses[0]
 daughter_mass1 = fs_masses[1]
 daughter_mass2 = fs_masses[2]
 
-bins_list, (binning_x, binning_y) = create_bins(m_dc, n_bins=20)
+bins_list, (binning_x, binning_y) = create_bins(m_dc, n_bins=100)
 
 
 def plot_values(wave=None, value_function=None, bins=None):
@@ -97,7 +97,7 @@ def get_bin_value(s_12, s_13, bin):
 
 
 def plot_data_simple():
-    data, data_size = read_data_monte_carlo()
+    data, data_size = read_data_monte_carlo(data_range=10000)
     data = data.tolist()
 
     for bin in bins_list:

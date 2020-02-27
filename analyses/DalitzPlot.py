@@ -44,7 +44,7 @@ def initialize_functions():
 
 def main():
 
-    bin_list = create_bins(m_dc, n_bins=10)[0]
+    bin_list = create_bins(m_dc, n_bins=200)[0]
 
     fcns = initialize_functions()
 
