@@ -8,7 +8,7 @@ import ROOT
 
 from bins.utils import is_valid_dalitz_point, hub  # , abs2
 
-from bins.bins import RectangularBin
+from bins.bins_main import RectangularBin
 from amplitudes.amplitude import Amplitude
 
 

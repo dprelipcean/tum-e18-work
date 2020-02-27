@@ -87,6 +87,52 @@ def is_valid_dalitz_point(dalitz_points, s, m12, m22, m32):
 	return ret_val.flatten()
 
 
+def is_valid_dalitz_point_pointwise(dalitz_point, s, m12, m22, m32):
+	"""Check whether the given dalitz point is valid.
+
+	Parameters
+	----------
+	dalitz_points: ndarray
+	s: float
+		Centre of mass energy.
+	m12: float
+	m22: float
+	m32: float
+
+	Returns
+	-------
+
+	"""
+
+	s23 = s + m12 + m22 + m32 - dalitz_point[0] - dalitz_point[1]
+
+	ret_val = s23 >= (m22**.5+m32**.5)**2
+	ret_val &= s23 <= (s**.5-m12**.5)**2
+	p12 = q2(s, s23, m12)
+	p22 = q2(s, dalitz_point[1], m22)
+	p32 = q2(s, dalitz_point[0], m32)
+	q12 = q2(dalitz_point[0], m12, m22)
+	q13 = q2(dalitz_point[1], m12, m32)
+	q23 = q2(s23, m22, m32)
+
+	ret_val &= p12 >= 0.
+	ret_val &= p22 >= 0.
+	ret_val &= p32 >= 0.
+	ret_val &= q12 >= 0.
+	ret_val &= q13 >= 0.
+	ret_val &= q23 >= 0.
+
+	p1 = abs(p12)**.5  # can take the abs() here, since p < 0. is already set to false in retVal
+	p2 = abs(p22)**.5
+	p3 = abs(p32)**.5
+
+	ret_val &= p1 + p2 > p3
+	ret_val &= p1 + p3 > p2
+	ret_val &= p2 + p3 > p1
+
+	return ret_val
+
+
 def main():
 	import ROOT
 	m_dc = 1.86958

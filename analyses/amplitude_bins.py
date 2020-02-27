@@ -9,7 +9,8 @@ from analyses.collect_data import read_data_monte_carlo
 from amplitudes.constants import m_dc, m_kc, m_pi, fs_masses
 
 from bins.utils import is_valid_dalitz_point
-from bins.bins import create_bins
+from bins.bins_main import create_bins
+from bins.iterative_binning import create_bins_matrix
 
 mother_mass = m_dc
 
@@ -18,6 +19,7 @@ daughter_mass1 = fs_masses[1]
 daughter_mass2 = fs_masses[2]
 
 bins_list, (binning_x, binning_y) = create_bins(m_dc, n_bins=100)
+bin_matrix = create_bins_matrix(m_dc, n_bins=100)
 
 
 def plot_values(wave=None, value_function=None, bins=None):
@@ -108,10 +110,58 @@ def plot_data_simple():
     plot_values(value_function=get_bin_value, bins=bins_list)
 
 
+def plot_data_iteratively():
+    print(f"Reading data.")
+
+    data, data_size = read_data_monte_carlo(data_range=100000)
+    data = data.tolist()
+
+    print(f"Computing data values in plot.")
+    for bin_column in bin_matrix:
+        for bin in bin_column:
+            for point in data:
+                if bin.contains(*point):
+                    bin.increment_value()
+
+    # flatten = lambda l: [item for sublist in l for item in sublist]
+    # plot_values(value_function=get_bin_value, bins=flatten(bin_matrix))
+
+    for iteration_step in range(20):
+        print(f"Computing iteration step: {iteration_step}")
+        bin_threshold_value = 100
+        i = len(bin_matrix) - 3
+        while i >= 0:
+            j = min(len(bin_matrix[i]) - 3, len(bin_matrix[i+1]) -2)
+            while j >= 0:
+                # print(f'{i}, {j}')
+                # print(f'lengths: {len(bin_matrix)} {len(bin_matrix[i])} {len(bin_matrix[i+1])}')
+
+                bin = bin_matrix[i][j]
+                bin_upper = bin_matrix[i][j + 1]
+                bin_right = bin_matrix[i + 1][j]
+                bin_diago = bin_matrix[i + 1][j + 1]
+
+                bin_sum_values = bin.value + bin_upper.value + bin_right.value + bin_diago.value
+                if bin_sum_values < bin_threshold_value:
+                    bin.borders = [bin.get_borders()[0], bin_diago.get_borders()[1], bin.get_borders()[2],
+                                   bin_diago.get_borders()[3]]
+                    bin.value = bin_sum_values
+
+                    del bin_matrix[i + 1][j + 1]
+                    del bin_matrix[i + 1][j]
+                    del bin_matrix[i][j + 1]
+
+                j -= 2
+            i -= 2
+
+    flatten = lambda l: [item for sublist in l for item in sublist]
+    plot_values(value_function=get_bin_value, bins=flatten(bin_matrix))
+
 
 if __name__ == "__main__":
     # plot_breit_function()
     # plot_angular_function()
-    plot_data_simple()
+    # plot_data_simple()
     # plot_amplitude_bins()
+    plot_data_iteratively()
 

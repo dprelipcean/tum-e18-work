@@ -9,7 +9,7 @@ import numpy as np
 from amplitudes.breit_wigner import BreitWigner
 
 from analyses.collect_data import read_data_monte_carlo
-from bins.bins import create_bins
+from bins.bins_main import create_bins
 from bins.chi2model import DalitzChi2model
 from bins.utils import is_valid_dalitz_point, hub
 from amplitudes.amplitude import Amplitude
