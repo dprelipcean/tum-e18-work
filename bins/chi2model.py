@@ -197,9 +197,6 @@ class DalitzChi2model:
             valid = is_valid_dalitz_point(grid, self.s, self.fsSquare[0], self.fsSquare[1], self.fsSquare[2])
             if np.sum(valid) > 0:
                 self.validBins[b] = True
-        for i, v in enumerate(self.validBins):
-            if v:
-                print(i)
 
         self.nValid = np.sum(self.validBins)
 
@@ -313,18 +310,21 @@ class DalitzChi2model:
         @param m2_12 numpy array for kinematic values for m2_12 of the events
         @param m2_13 numpy array for kinematic values for m2_13 of the events
         """
-        n_dat = len(m2_12)
-        if not len(m2_13) == n_dat:
+        number_data_points = len(m2_12)
+        if not len(m2_13) == number_data_points:
             raise ValueError("Number of data points does not match.")
+
         data = np.zeros(self.nBins, dtype=float)
-        for d in range(n_dat):
-            t, n = self.find_bin(m2_12[d], m2_13[d], True)
+
+        for data_index in range(number_data_points):
+            t, n = self.find_bin(m2_12[data_index], m2_13[data_index], True)
             if n == 0:
                 error = f"dalitzChi2model.loadData(...): " \
-                        f"WARNING: Could not find a valid bin for the data point: ({str(m2_12[d])} {str(m2_13[d])})."
+                        f"WARNING: Could not find a valid bin for the data point: ({str(m2_12[data_index])} {str(m2_13[data_index])})."
                 print(error)
                 continue
             data[t] += 1.
+
         count_valid = 0
         self.data = np.zeros(self.nValid, dtype=float)
         for t in range(self.nBins):

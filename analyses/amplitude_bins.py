@@ -18,8 +18,9 @@ bachelor_mass = fs_masses[0]
 daughter_mass1 = fs_masses[1]
 daughter_mass2 = fs_masses[2]
 
-bins_list, (binning_x, binning_y) = create_bins(m_dc, n_bins=100)
-bin_matrix = create_bins_matrix(m_dc, n_bins=100)
+n_bins = 100
+bins_list, (binning_x, binning_y) = create_bins(m_dc, n_bins=n_bins)
+bin_matrix = create_bins_matrix(m_dc, n_bins=n_bins)
 
 
 def plot_values(wave=None, value_function=None, bins=None):
@@ -113,7 +114,7 @@ def plot_data_simple():
 def plot_data_iteratively():
     print(f"Reading data.")
 
-    data, data_size = read_data_monte_carlo(data_range=100000)
+    data, data_size = read_data_monte_carlo(data_range=None)
     data = data.tolist()
 
     print(f"Computing data values in plot.")
@@ -128,8 +129,8 @@ def plot_data_iteratively():
 
     for iteration_step in range(20):
         print(f"Computing iteration step: {iteration_step}")
-        bin_threshold_value = 100
         i = len(bin_matrix) - 3
+        bin_threshold_value = 10
         while i >= 0:
             j = min(len(bin_matrix[i]) - 3, len(bin_matrix[i+1]) -2)
             while j >= 0:
@@ -153,6 +154,7 @@ def plot_data_iteratively():
 
                 j -= 2
             i -= 2
+        
 
     flatten = lambda l: [item for sublist in l for item in sublist]
     plot_values(value_function=get_bin_value, bins=flatten(bin_matrix))

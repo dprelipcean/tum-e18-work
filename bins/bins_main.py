@@ -76,7 +76,7 @@ class RectangularBin:
 class Bins:
     """Class that creates bins."""
 
-    def __init__(self, m_dc, n_bins, bin_class=RectangularBin):
+    def __init__(self, m_dc, n_bins, bin_class=RectangularBin, isotropic_binning=True):
         self.bin_class = bin_class
 
         self.m_dc = m_dc
@@ -91,6 +91,8 @@ class Bins:
 
         self.binning_y = self._create_binning_1d()
         self.dy = self._get_bin_increment(self.binning_y)
+
+        self.isotropic_binning = isotropic_binning
 
     def _create_binning_1d(self):
         return np.linspace(0., self.m_dc**2, self.n_bins)
@@ -120,11 +122,14 @@ class Bins:
         return distance_from_resonance_center
 
     def _compute_distance_increment(self, distance_from_resonance):
-        distance_increment = round(distance_from_resonance / self.division_factor)
-
-        if distance_increment == 0:
+        if self.isotropic_binning:
             distance_increment = 1
-        # print(distance_increment)
+        else:
+            distance_increment = round(distance_from_resonance / self.division_factor)
+
+            if distance_increment == 0:
+                distance_increment = 1
+
         return distance_increment
 
     def _compute_end_index(self, index, distance_increment):

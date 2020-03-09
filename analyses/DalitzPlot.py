@@ -21,6 +21,7 @@ from amplitudes.constants import m_dc, fs_masses
 
 
 def initialize_functions():
+    """Initialize the amplitude functions for the resonances."""
     fcns = list()
     for wave in DATA_FILE_CHANNELS.keys():
         if wave == 's_wave':
@@ -42,9 +43,9 @@ def initialize_functions():
     return fcns
 
 
-def main():
+def main(n_bins=300, plot_dalitz_plane=True):
 
-    bin_list = create_bins(m_dc, n_bins=200)[0]
+    bin_list = create_bins(m_dc, n_bins=n_bins)[0]
 
     fcns = initialize_functions()
 
@@ -74,6 +75,7 @@ def main():
     print(f"nDeWeight ={np.sum(weights > 0)}")
 
     c2model.load_data(m2s[:, 0], m2s[:, 1])
+    print(f"Data loaded")
 
     # params = np.random.uniform(-1.,1.,2*len(fcns))
     params = np.zeros(2 * len(fcns))
@@ -81,20 +83,24 @@ def main():
     from iminuit import Minuit
 
     m = Minuit.from_array_func(c2model.eval, params, error=0.5)
+    print(f"Fit process started.")
     m.migrad()
 
     vals = np.array([m.values['x' + str(i)] for i in range(2 * len(fcns))])
 
-    h1 = c2model.make_theo_hist(vals)
-    h1.Draw('col')
-    input()
-    h2 = c2model.make_data_hist()
-    h2.Draw('col')
-    input()
+    print(m.values)
     print(vals)
 
     ntfrr = ((vals[0] + 1.j * vals[1]) * (vals[2] - 1.j * vals[3])) ** 2
     print(f"{ntfrr / abs(ntfrr)} should be real (phase of pi/2)")
+
+    if plot_dalitz_plane:
+        h1 = c2model.make_theo_hist(vals)
+        h1.Draw('col')
+        input()
+        h2 = c2model.make_data_hist()
+        h2.Draw('col')
+        input()
 
 
 if __name__ == "__main__":

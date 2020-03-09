@@ -16,7 +16,7 @@ def generate_random_data(m_pi, m_kc, m_dc, n_data):
         -------
         m2s: ndarray
             N x 2 array of points.
-        """
+    """
     m2s = np.random.uniform((m_pi + m_kc) ** 2, (m_dc - m_pi) ** 2, 2 * n_data)
     m2s.shape = (n_data, 2)
     return m2s

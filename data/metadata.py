@@ -2,7 +2,7 @@ DATA_FILE_CHANNELS = {
     's_wave': {
         'kappa': {'mass': 0.999, 'width': 0.5504},
         'K*(1430)': {'mass': 1.414, 'width': 0.29},
-        # 'constant': {'mass': ?, 'width': ?}
+        'constant': {'mass': 0, 'width': 0}
     },
     'p_wave': {
         'K*(892)': {'mass': 0.896, 'width': 0.0504},

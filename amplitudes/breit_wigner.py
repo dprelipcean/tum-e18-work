@@ -45,6 +45,11 @@ class BreitWigner:
         self.width = width
         self.spin = spin
 
+        if mass == 0 and width == 0:
+            self.constant = True
+        else:
+            self.constant = False
+
         self.daughter_mass1 = daughter_mass1
         self.daughter_mass2 = daughter_mass2
 
@@ -75,63 +80,66 @@ class BreitWigner:
         if spin > 2:
             raise Exception(f"BELLEbreitWigner::BELLEbreitWigner(...): ERROR: Spin > 2 not supported yet")
 
-    def eval(self, s12, constant_gamma=True):
+    def eval(self, s12):
         """Evaluate the Breit-Wigner function."""
-        m12 = np.power(s12, 1/2)
-        # self._check_condition_daughter_masses(m12, self.daughter_mass1, self.daughter_mass2)
+        if self.constant:
+            ret_val = 1
+        else:
+            m12 = np.power(s12, 1/2)
+            # self._check_condition_daughter_masses(m12, self.daughter_mass1, self.daughter_mass2)
 
-        # ToDo: check why is this needed
-        # if (m12 > self.mother_mass - self.bachelor_mass) or (m12 < self.daughter_mass2 + self.daughter_mass2):
-        #     print("Masses condition not satisfied.")
-        #     return 0 + 0 * 1j
+            # ToDo: check why is this needed
+            # if (m12 > self.mother_mass - self.bachelor_mass) or (m12 < self.daughter_mass2 + self.daughter_mass2):
+            #     print("Masses condition not satisfied.")
+            #     return 0 + 0 * 1j
 
-        s = np.power(self.mother_mass, 2)
-        sr = np.power(self.mass, 2)
-        s_daughter1 = np.power(self.daughter_mass1, 2)
-        s_daughter2 = np.power(self.daughter_mass2, 2)
-        s_batch = np.power(self.bachelor_mass, 2)
+            s = np.power(self.mother_mass, 2)
+            sr = np.power(self.mass, 2)
+            s_daughter1 = np.power(self.daughter_mass1, 2)
+            s_daughter2 = np.power(self.daughter_mass2, 2)
+            s_batch = np.power(self.bachelor_mass, 2)
 
-        val_1 = np.power(sr - s_daughter1 - s_daughter2, 2) - 4 * s_daughter1 * s_daughter2
-        val_2 = np.power(s12 - s_daughter1 - s_daughter2, 2) - 4 * s_daughter1 * s_daughter2
+            val_1 = np.power(sr - s_daughter1 - s_daughter2, 2) - 4 * s_daughter1 * s_daughter2
+            val_2 = np.power(s12 - s_daughter1 - s_daughter2, 2) - 4 * s_daughter1 * s_daughter2
 
-        p_r = np.power(val_1, 0.5) / 2 / self.mass
-        p_ab = np.power(val_2, .5) / 2 / m12
+            p_r = np.power(val_1, 0.5) / 2 / self.mass
+            p_ab = np.power(val_2, .5) / 2 / m12
 
-        # p_d = np.power(np.power(s - sr - s_batch, 2) - 4 * sr * s_batch, .5) / 2 / self.mother_mass
-        s_val = np.power(s - s12 - s_batch, 2) - 4 * s12 * s_batch
-        # Do (sign * abs) to avoid RuntimeWarning: invalid value encountered in power
-        p_abc = np.sign(s_val) * np.power(np.abs(s_val), .5) / 2 / self.mother_mass
+            # p_d = np.power(np.power(s - sr - s_batch, 2) - 4 * sr * s_batch, .5) / 2 / self.mother_mass
+            s_val = np.power(s - s12 - s_batch, 2) - 4 * s12 * s_batch
+            # Do (sign * abs) to avoid RuntimeWarning: invalid value encountered in power
+            p_abc = np.sign(s_val) * np.power(np.abs(s_val), .5) / 2 / self.mother_mass
 
-        if self.spin == 0:
-            fr = 1.
-            fd = 1.
-        elif self.spin == 1:
-            fr = np.power((np.power(self.rr * p_r, 2) + 1) / (np.power(self.rr * p_ab, 2) + 1), .5)
-            # fd = np.power((np.power(self.RD * p_d, 2)+1) / (np.power(self.RD * p_abc, 2)+1), .5)
-            fd = np.power(1. / (np.power(self.rd * p_abc, 2) + 1), .5)
-        else:  # self.spin == 2:
-            xr = self.rr * self.rr * p_r * p_r
-            x_ab = self.rr * self.rr * p_ab * p_ab
+            if self.spin == 0:
+                fr = 1.
+                fd = 1.
+            elif self.spin == 1:
+                fr = np.power((np.power(self.rr * p_r, 2) + 1) / (np.power(self.rr * p_ab, 2) + 1), .5)
+                # fd = np.power((np.power(self.RD * p_d, 2)+1) / (np.power(self.RD * p_abc, 2)+1), .5)
+                fd = np.power(1. / (np.power(self.rd * p_abc, 2) + 1), .5)
+            else:  # self.spin == 2:
+                xr = self.rr * self.rr * p_r * p_r
+                x_ab = self.rr * self.rr * p_ab * p_ab
 
-            fr = np.power((np.power(xr-3., 2) + 9 * xr) / (np.power(x_ab-3., 2) + 9 * x_ab), .5)
+                fr = np.power((np.power(xr-3., 2) + 9 * xr) / (np.power(x_ab-3., 2) + 9 * x_ab), .5)
 
-            # xD   = self.RD * self.RD * p_d * p_d
-            x_abc = np.power(self.rd, 2) * np.power(p_abc, 2)
-            # fd = np.power((np.power(xD-3., 2) + 9 * xD) / (np.power(x_abc-3., 2) + 9 * x_abc), .5)
-            fd = np.power(1. / (np.power(x_abc-3., 2) + 9 * x_abc), .5)
+                # xD   = self.RD * self.RD * p_d * p_d
+                x_abc = np.power(self.rd, 2) * np.power(p_abc, 2)
+                # fd = np.power((np.power(xD-3., 2) + 9 * xD) / (np.power(x_abc-3., 2) + 9 * x_abc), .5)
+                fd = np.power(1. / (np.power(x_abc-3., 2) + 9 * x_abc), .5)
 
-        gamma = self.width * self.mass / m12 * np.power(fr, 2) * np.power(p_ab / p_r, 2 * self.spin + 1)
+            gamma = self.width * self.mass / m12 * np.power(fr, 2) * np.power(p_ab / p_r, 2 * self.spin + 1)
 
-        # Use this for complex BreitWigner:
-        ret_val = complex(fr * fd, 0.) / complex(np.power(self.mass, 2) - s12, - self.mass * gamma)
+            # Use this for complex BreitWigner:
+            ret_val = complex(fr * fd, 0.) / complex(np.power(self.mass, 2) - s12, - self.mass * gamma)
 
-        # Use this for real BreitWigner:
-        # ret_val = np.abs(complex(fr * fd, 0.) / ((np.power(self.mass, 2) - s12) + np.power(self.mass * gamma, 2)))
+            # Use this for real BreitWigner:
+            # ret_val = np.abs(complex(fr * fd, 0.) / ((np.power(self.mass, 2) - s12) + np.power(self.mass * gamma, 2)))
 
-        # if not ret_val.real or not ret_val.imag:
-        #     print(f"s12 = {s12} sDaughter1 = {s_daughter1} sDaughter2 = {s_daughter2} p_r = {p_r} p_ab = {p_ab} "
-        #           f"fr = {fr} fd = {fd} gamma = {gamma}")
-        # print(f'ret_val: {ret_val}')
+            # if not ret_val.real or not ret_val.imag:
+            #     print(f"s12 = {s12} sDaughter1 = {s_daughter1} sDaughter2 = {s_daughter2} p_r = {p_r} p_ab = {p_ab} "
+            #           f"fr = {fr} fd = {fd} gamma = {gamma}")
+            # print(f'ret_val: {ret_val}')
 
         return ret_val
 
