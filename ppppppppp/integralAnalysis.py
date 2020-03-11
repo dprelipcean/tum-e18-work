@@ -6,7 +6,7 @@ import os, sys
 import numpy as np
 import numpy.linalg as la
 from scipy.linalg import block_diag
-from regularize_integral_matrix import parseMatrixFile#, isHermitian, regulatrizeMatrix
+from .regularize_integral_matrix import parseMatrixFile#, isHermitian, regulatrizeMatrix
 from splineFunctions import makeBinnedSplineFunctions
 import ROOT
 

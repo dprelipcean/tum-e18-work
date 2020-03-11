@@ -108,9 +108,11 @@ def is_valid_dalitz_point_pointwise(dalitz_point, s, m12, m22, m32):
 
 	ret_val = s23 >= (m22**.5+m32**.5)**2
 	ret_val &= s23 <= (s**.5-m12**.5)**2
+
 	p12 = q2(s, s23, m12)
 	p22 = q2(s, dalitz_point[1], m22)
 	p32 = q2(s, dalitz_point[0], m32)
+
 	q12 = q2(dalitz_point[0], m12, m22)
 	q13 = q2(dalitz_point[1], m12, m32)
 	q23 = q2(s23, m22, m32)

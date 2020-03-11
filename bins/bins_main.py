@@ -44,7 +44,7 @@ class RectangularBin:
         out: bool
             Flag indicating whether the point is withing the bins' borders or not.
         """
-        return self.borders[0] < x <= self.borders[1] and self.borders[2] < y <= self.borders[3]
+        return self.borders[0] <= x <= self.borders[1] and self.borders[2] <= y <= self.borders[3]
 
     def make_grid(self, mesh_width):
         """

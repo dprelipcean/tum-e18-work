@@ -104,5 +104,6 @@ def main():
 			ana = fcn(xEvl,i)
 			print(f'{deg},{i},{ana},{num}')
 
+
 if __name__ == "__main__":
 	main()

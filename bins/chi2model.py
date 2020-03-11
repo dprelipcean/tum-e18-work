@@ -106,7 +106,7 @@ class DalitzChi2model:
         """
         Allows one-dimensional indexing of two functions
         @param f first function index
-        @param g second funtcion index
+        @param g second function index
         """
         return f * self.nFunc + g
 
@@ -298,7 +298,7 @@ class DalitzChi2model:
     def eval(self, params):
         """
         Evaluate the chi2 function
-        @param params production amplutdes as real-values numpy array [re_0, im_0, re_1, ...]
+        @param params production amplitutdes as real-values numpy array [re_0, im_0, re_1, ...]
         """
         prod_amps = params[::2] + 1.j * params[1::2]
         model = self.get_intensity(prod_amps)
@@ -336,7 +336,7 @@ class DalitzChi2model:
                 continue
             self.data[count_valid] = data[t]
             count_valid += 1
-        self.inv_errors = 1. / self.data ** .5
+        self.inv_errors = 1. / self.data
         self.inv_errors[np.isinf(self.inv_errors)] = 0.
 
     def make_theo_hist(self, params):

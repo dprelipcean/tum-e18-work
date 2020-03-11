@@ -5,6 +5,7 @@
 """Dalitz plotting."""
 
 import numpy as np
+import pickle
 
 from amplitudes.breit_wigner import BreitWigner
 
@@ -45,7 +46,11 @@ def initialize_functions():
 
 def main(n_bins=300, plot_dalitz_plane=True):
 
-    bin_list = create_bins(m_dc, n_bins=n_bins)[0]
+    try:
+        with open('./../bins/binning_list.bin', 'rb') as binning_file:
+            bin_list = pickle.load(binning_file)
+    except TypeError:
+        bin_list = create_bins(m_dc, n_bins=n_bins)[0]
 
     fcns = initialize_functions()
 
@@ -77,8 +82,8 @@ def main(n_bins=300, plot_dalitz_plane=True):
     c2model.load_data(m2s[:, 0], m2s[:, 1])
     print(f"Data loaded")
 
-    # params = np.random.uniform(-1.,1.,2*len(fcns))
-    params = np.zeros(2 * len(fcns))
+    params = np.random.uniform(-1., 1., 2 * len(fcns))
+    # params = np.zeros(2 * len(fcns))
 
     from iminuit import Minuit
 
@@ -88,6 +93,7 @@ def main(n_bins=300, plot_dalitz_plane=True):
 
     vals = np.array([m.values['x' + str(i)] for i in range(2 * len(fcns))])
 
+    print(params)
     print(m.values)
     print(vals)
 
@@ -95,9 +101,9 @@ def main(n_bins=300, plot_dalitz_plane=True):
     print(f"{ntfrr / abs(ntfrr)} should be real (phase of pi/2)")
 
     if plot_dalitz_plane:
-        h1 = c2model.make_theo_hist(vals)
-        h1.Draw('col')
-        input()
+        # h1 = c2model.make_theo_hist(vals)
+        # h1.Draw('col')
+        # input()
         h2 = c2model.make_data_hist()
         h2.Draw('col')
         input()
