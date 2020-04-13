@@ -37,8 +37,6 @@ def plot_values(wave=None, value_function=None, bins=None):
         if bins:
             wave = bin
 
-
-        # print(f'grid val: {grid_val}')
         s_12 = bin.position[0]
         s_13 = bin.position[1]
 

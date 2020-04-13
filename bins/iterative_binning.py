@@ -26,7 +26,7 @@ def create_bins_matrix(m_dc, n_bins):
 
     return bin_matrix
 
-n_bins = 100
+n_bins = 300
 bin_matrix = create_bins_matrix(m_dc, n_bins=n_bins)
 
 
@@ -34,9 +34,73 @@ def get_bin_value(s_12, s_13, bin):
     return bin.value
 
 
+def iteration_method(my_bin_matrix, bin_threshold_value):
+    i = len(my_bin_matrix) - 3
+    while i >= 0:
+        j = min(len(my_bin_matrix[i]) - 3, len(my_bin_matrix[i + 1]) - 2)
+        while j >= 0:
+
+            bin = my_bin_matrix[i][j]
+            bin_upper = my_bin_matrix[i][j + 1]
+            bin_right = my_bin_matrix[i + 1][j]
+            bin_diago = my_bin_matrix[i + 1][j + 1]
+
+            bin_sum_values = bin.value + bin_upper.value + bin_right.value + bin_diago.value
+            if bin_sum_values < bin_threshold_value:
+                bin.redefine_borders(bin.get_borders()[0], bin_diago.get_borders()[1],
+                                     bin.get_borders()[2], bin_diago.get_borders()[3])
+                bin.value = bin_sum_values
+
+                del my_bin_matrix[i + 1][j + 1]
+                del my_bin_matrix[i + 1][j]
+                del my_bin_matrix[i][j + 1]
+
+            j -= 2
+        i -= 2
+
+
+def iteration_method_2(my_bin_matrix, bin_threshold_value):
+    i = len(my_bin_matrix) - 2
+    while i >= 0:
+        j = min(len(my_bin_matrix[i]) - 2, len(my_bin_matrix[i + 1]) - 2)
+        while j >= 0:
+
+            bin = my_bin_matrix[i][j]
+            bin_upper = my_bin_matrix[i][j + 1]
+
+            bin_sum_values = bin.value + bin_upper.value
+
+            if bin_sum_values < bin_threshold_value:
+                bin.redefine_borders(bin.get_borders()[0], bin_upper.get_borders()[1],
+                                     bin.get_borders()[2], bin_upper.get_borders()[3])
+                bin.value = bin_sum_values
+
+                del my_bin_matrix[i][j + 1]
+
+            j -= 1
+        i -= 1
+
+    j = min(len(my_bin_matrix[i]) - 2, len(my_bin_matrix[i + 1]) - 2)
+    while j >= 0:
+        i = len(my_bin_matrix) - 2
+        while i >= 0:
+
+            bin = my_bin_matrix[i][j]
+            bin_right = my_bin_matrix[i + 1][j]
+
+            bin_sum_values = bin.value + bin_right.value
+            if bin_sum_values < bin_threshold_value:
+                bin.redefine_borders(bin.get_borders()[0], bin_right.get_borders()[1],
+                                     bin.get_borders()[2], bin_right.get_borders()[3])
+                bin.value = bin_sum_values
+
+                del my_bin_matrix[i + 1][j]
+            j -= 1
+        i -= 1
+
 def plot_data_iteratively():
     bin_threshold_value = 10
-    max_threshold_value = 400
+    max_threshold_value = 200
     threshold_increment = 10
     flatten = lambda l: [item for sublist in l for item in sublist]
 
@@ -61,44 +125,7 @@ def plot_data_iteratively():
         if bin_threshold_value < max_threshold_value:
             bin_threshold_value += threshold_increment
 
-        joint_cells = 0
-        i = len(bin_matrix) - 3
-        while i >= 0:
-            j = min(len(bin_matrix[i]) - 3, len(bin_matrix[i+1]) -2)
-            while j >= 0:
-                # print(f'{i}, {j}')
-                # print(f'lengths: {len(bin_matrix)} {len(bin_matrix[i])} {len(bin_matrix[i+1])}')
-
-                bin = bin_matrix[i][j]
-                bin_upper = bin_matrix[i][j + 1]
-                bin_right = bin_matrix[i + 1][j]
-                bin_diago = bin_matrix[i + 1][j + 1]
-
-                # k = 1
-                # while bin.get_borders()[2] != bin_right.get_borders()[2]:
-                #     print(bin.get_borders())
-                #     print(bin_right.get_borders())
-                #     j += k * (-1) ** k
-                #     if j >= len(bin_matrix[i+1]) - 1:
-                #         j = len(bin_matrix[i+1]) - 2
-                #     if j < 0:
-                #         j = 0
-                #     bin_right = bin_matrix[i + 1][j]
-
-
-                bin_sum_values = bin.value + bin_upper.value + bin_right.value + bin_diago.value
-                if bin_sum_values < bin_threshold_value:
-
-                    bin.borders = [bin.get_borders()[0], bin_diago.get_borders()[1],
-                                   bin.get_borders()[2], bin_diago.get_borders()[3]]
-                    bin.value = bin_sum_values
-
-                    del bin_matrix[i + 1][j + 1]
-                    del bin_matrix[i + 1][j]
-                    del bin_matrix[i][j + 1]
-
-                j -= 2
-            i -= 2
+        iteration_method_2(bin_matrix, bin_threshold_value)
 
         bins_list_from_matrix = flatten(bin_matrix)
         print(len(bins_list_from_matrix))

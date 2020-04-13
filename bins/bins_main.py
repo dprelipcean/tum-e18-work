@@ -7,6 +7,9 @@
 """Script that defines bins functions for the Dalitz plot."""
 
 import numpy as np
+import pickle
+
+from amplitudes.constants import m_dc, fs_masses
 
 
 class RectangularBin:
@@ -16,7 +19,9 @@ class RectangularBin:
         self.borders = [x_min, x_max, y_min, y_max]
         self.value = 0
 
-        self.position = ((x_min + x_max)/2, (y_min + y_max)/2)
+    @property
+    def position(self):
+        return (self.borders[0] + self.borders[1])/2, (self.borders[2] + self.borders[3])/2
 
     def get_all_borders(self):
         """Return the borders of the bins as a list."""
@@ -25,6 +30,9 @@ class RectangularBin:
     def get_borders(self):
         """Return the borders of the bins."""
         return self.borders
+
+    def redefine_borders(self, x_min, x_max, y_min, y_max):
+        self.borders = [x_min, x_max, y_min, y_max]
 
     def increment_value(self):
         """Increment the bin value by one."""
@@ -196,3 +204,16 @@ def create_bins(m_dc, n_bins):
     """Create explicit bins."""
     bins = Bins(m_dc, n_bins)
     return bins.create_bins()
+
+
+def define_binning(n_bins=20, predefined=True):
+    if predefined:
+        try:
+            with open('./../bins/binning_list.bin', 'rb') as binning_file:
+                bin_list = pickle.load(binning_file)
+        except FileNotFoundError:
+            pass
+    else:
+        bin_list = create_bins(m_dc, n_bins=n_bins)[0]
+
+    return bin_list

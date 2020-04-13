@@ -135,6 +135,15 @@ def is_valid_dalitz_point_pointwise(dalitz_point, s, m12, m22, m32):
 	return ret_val
 
 
+def compute_weights(m2s):
+	weights = 1. + hub(m2s) ** 2
+
+	mxx = np.max(weights)
+
+	weights -= np.random.random(weights.shape) * mxx
+	return weights
+
+
 def main():
 	import ROOT
 	m_dc = 1.86958
@@ -162,6 +171,7 @@ def main():
 		hist.SetBinContent(i, j, 1.)
 	hist.Draw("col")
 	input()
+
 
 
 if __name__ == "__main__":
